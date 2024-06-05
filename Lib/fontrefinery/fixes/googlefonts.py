@@ -37,10 +37,12 @@ def fix_fs_selection(font: Font, _context) -> FixResult:
     ttFont = font.ttFont
     stylename = font_stylename(ttFont)
     tokens = set(stylename.split())
-    fs_selection = ttFont["OS/2"].fsSelection
 
-    # turn off all bits except for bit 7 (USE_TYPO_METRICS)
-    fs_selection &= 1 << 7
+    # This is different to gftools-fix, we explicitly set TYPO_METRICS bit
+    if ttFont["OS/2"].version >= 4:
+        fs_selection = 1 << 7
+    else:
+        fs_selection = 0
 
     if "Italic" in tokens:
         fs_selection |= 1 << 0
