@@ -31,33 +31,39 @@ def main(args):
         print("Must specify either --fonts or --directories")
         sys.exit(1)
     fixes = FixDirectory()
-    wanted_fixes = [
-        "com.google.fonts/check/family/win_ascent_and_descent",
-        "com.google.fonts/check/font_copyright",
-        "com.google.fonts/check/os2/use_typo_metrics",
-        "com.google.fonts/check/fstype",
-    ]
+    wanted_fixes = fixes.keys()
     for directory in directories:
         context = FixContext(directory)
         for font in context.fonts:
-            table = Table(title=os.path.basename(font.file))
+            table = Table(
+                title=os.path.basename(font.file),
+                show_header=False,
+                expand=True,
+                box=None,
+                title_justify="left",
+            )
             changed = False
             table.add_column("Fix")
             table.add_column("Messages")
+            seen_messages = set([])
             oldcolor = None
             for fix in wanted_fixes:
                 fixname = fix.replace("com.google.fonts/check/", "")
                 this_changed, this_messages = fixes[fix](font, context)
                 color = "[yellow]" if this_changed else "[green]"
                 for ix, message in enumerate(this_messages):
+                    if message in seen_messages:
+                        continue
                     if ix == 0 or color != oldcolor:
                         table.add_row(color + fixname, message)
                     else:
                         table.add_row("", message)
+                    seen_messages.add(message)
                     oldcolor = color
                 changed |= this_changed
             if table.rows:
                 print(table)
+                print()
             if changed:
                 font.ttFont.save(font.file)
 

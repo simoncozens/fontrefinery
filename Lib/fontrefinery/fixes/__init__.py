@@ -62,6 +62,9 @@ class FixDirectory:
     def __getitem__(self, key):
         return self.__all_fixes[key]
 
+    def keys(self):
+        return self.__all_fixes.keys()
+
     def load_all_fixes(self, package=sys.modules[__name__]):
         for _, import_path, _ in pkgutil.walk_packages(
             path=package.__path__, prefix=package.__name__ + "."
