@@ -75,7 +75,10 @@ def fix_font_copyright(font, _context) -> FixResult:
         return False, ["[red]Reserved font name found in copyright[/red]"]
 
     font_year = timestampToString(font.ttFont["head"].created)[-4:]
-    expected_copyright = f"Copyright {font_year}, the {font.family_metadata.name} Project Authors ({font.family_metadata.source.repository_url})"
+    md_year = font.family_metadata.date_added[:4]
+    if font_year > md_year:
+        font_year = md_year
+    expected_copyright = f"Copyright {font_year} The {font.family_metadata.name} Project Authors ({font.family_metadata.source.repository_url})"
     messages = []
     font_changed = False
     if not re.match(EXPECTED_COPYRIGHT_PATTERN, font.font_metadata.copyright.lower()):
