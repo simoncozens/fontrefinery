@@ -43,8 +43,8 @@ def main(args):
                 title_justify="left",
             )
             changed = False
-            table.add_column("Fix")
-            table.add_column("Messages")
+            table.add_column("Fix", ratio=1)
+            table.add_column("Messages", ratio=2)
             seen_messages = set([])
             oldcolor = None
             for fix in wanted_fixes:
