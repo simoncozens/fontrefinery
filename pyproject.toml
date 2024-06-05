@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools >= 61.0", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fontrefinery"
+dynamic = ["version"]
+description = "A font fixing tool for everyone"
+requires-python = ">=3.8"
+readme = { file = "README.md", content-type = "text/markdown" }
+authors = [
+    { name = "Simon Cozens" },
+]
+dependencies = [
+	"fontTools >= 4.46.0",
+	"opentypespec",
+	"rich",
+	"fontbakery",
+]
+
+[project.scripts]
+fontbakery = "fontrefinery.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["Lib"]
+
+[tool.pytype]
+inputs = ["Lib"]
