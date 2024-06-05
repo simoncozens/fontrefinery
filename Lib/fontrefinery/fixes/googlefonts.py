@@ -146,3 +146,16 @@ def fix_integer_ppem_if_hinted(font, _context) -> FixResult:
         font.ttFont["head"].flags |= 1 << 3
         return True, ["Set head table bit 3 (integer ppem)"]
     return False, []
+
+
+@fix(id="com.google.fonts/check/metadata/subsets_order")
+def fix_subsets_order(font, _context) -> FixResult:
+    if not font.family_metadata:
+        return False, []
+    sorted_subsets = sorted(font.family_metadata.subsets)
+    if font.family_metadata.subsets != sorted_subsets:
+        del font.family_metadata.subsets[:]
+        font.family_metadata.subsets.extend(sorted_subsets)
+        WriteMetadata(font.family_metadata, font.metadata_file)
+        return True, ["Subsets reordered"]
+    return False, []
