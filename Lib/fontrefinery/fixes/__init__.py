@@ -3,12 +3,30 @@ import importlib
 import pkgutil
 import warnings
 import sys
-from typing import Union, List, Tuple
+from typing import Union, List, Tuple, Any
 
+from fontTools.ttLib import TTFont
 from fontbakery.callable import FontbakeryCallable
 
 
 FixResult = Tuple[bool, List[str]]
+
+
+def expect_field(
+    ttFont: TTFont, table: str, field: str, value: Any, getter=None, setter=None
+) -> FixResult:
+    """Check that a table has a field with the expected value"""
+    if getter is not None:
+        previous = getter(ttFont)
+    else:
+        previous = getattr(ttFont[table], field)
+    if previous == value:
+        return False, []
+    if setter is not None:
+        setter(ttFont, value)
+    else:
+        setattr(ttFont[table], field, value)
+    return True, [f"Set {table}.{field} to {value} (was {previous})"]
 
 
 class FontRefineryFix(FontbakeryCallable):
