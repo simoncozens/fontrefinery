@@ -134,4 +134,15 @@ def fix_description_git_url(font, _context) -> FixResult:
     descfile = os.path.join(os.path.dirname(font.file), "DESCRIPTION.en_us.html")
     with open(descfile, "w", encoding="utf-8") as f:
         f.write(description)
-    return False, ["Git URL added to DESCRIPTION"]
+    return False, ["'To contribute' URL added to DESCRIPTION"]
+
+
+@fix(id="com.google.fonts/check/integer_ppem_if_hinted")
+def fix_integer_ppem_if_hinted(font, _context) -> FixResult:
+    """Hinted fonts must have head table flag bit 3 set"""
+    if not font.is_hinted:
+        return False, []
+    if not font.ttFont["head"].flags & (1 << 3):
+        font.ttFont["head"].flags |= 1 << 3
+        return True, ["Set head table bit 3 (integer ppem)"]
+    return False, []
