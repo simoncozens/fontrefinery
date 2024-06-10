@@ -7,9 +7,10 @@ import fontbakery.checks.googlefonts.description
 import fontbakery.checks.googlefonts.license
 
 from fontbakery.checks.googlefonts.constants import EXPECTED_COPYRIGHT_PATTERN
-from fontbakery.constants import NameID
+from fontbakery.constants import NameID, PLACEHOLDER_LICENSING_TEXT
 from fontTools.misc.timeTools import timestampToString
 from gftools.fix import fix_ofl_license
+from gftools.fix import remove_tables
 from gftools.utils import font_stylename, remove_url_prefix
 from gftools.util.google_fonts import WriteMetadata
 
@@ -85,6 +86,8 @@ def fix_font_copyright(font, _context) -> FixResult:
         font.font_metadata.copyright = expected_copyright
         messages.append("Metadata copyright updated")
         WriteMetadata(font.family_metadata, font.metadata_file)
+
+    # This doesn't yet handle Mac platform names...
     copyright_string = font.ttFont["name"].getName(NameID.COPYRIGHT_NOTICE, 3, 1)
     if not re.match(EXPECTED_COPYRIGHT_PATTERN, copyright_string.toUnicode().lower()):
         font.ttFont["name"].setName(
@@ -92,6 +95,12 @@ def fix_font_copyright(font, _context) -> FixResult:
         )
         messages.append("Font copyright updated")
         font_changed = True
+    # ...so let's remove them if there
+    for nameRecord in font.ttFont["name"].names:
+        if nameRecord.nameID == NameID.COPYRIGHT_NOTICE and nameRecord.platformID == 1:
+            font.ttFont["name"].names.remove(nameRecord)
+            font_changed = True
+            messages.append("Removed Mac copyright")
     if font.license_contents and not re.match(
         EXPECTED_COPYRIGHT_PATTERN, font.license_contents.lower()
     ):
@@ -148,6 +157,33 @@ def fix_integer_ppem_if_hinted(font, _context) -> FixResult:
     return False, []
 
 
+@fix(id="com.google.fonts/check/name/license")
+def fix_name_license(font, _context) -> FixResult:
+    if not font.family_metadata:
+        return False, []
+    updated = False
+    placeholder = PLACEHOLDER_LICENSING_TEXT[font.license_filename]
+    for i, nameRecord in enumerate(font.ttFont["name"].names):
+        if nameRecord.nameID == NameID.LICENSE_DESCRIPTION:
+            value = nameRecord.toUnicode()
+            if value != placeholder:
+                nameRecord.string = placeholder.encode(nameRecord.getEncoding())
+                updated = True
+        if (
+            nameRecord.nameID == NameID.LICENSE_INFO_URL
+            and font.license_filename == "OFL.txt"
+        ):
+            value = nameRecord.toUnicode()
+            if value != "https://openfontlicense.org":
+                nameRecord.string = "https://openfontlicense.org".encode(
+                    nameRecord.getEncoding()
+                )
+                updated = True
+    if updated:
+        return True, ["Updated name table license description"]
+    return False, []
+
+
 @fix(id="com.google.fonts/check/metadata/subsets_order")
 def fix_subsets_order(font, _context) -> FixResult:
     if not font.family_metadata:
@@ -159,3 +195,8 @@ def fix_subsets_order(font, _context) -> FixResult:
         WriteMetadata(font.family_metadata, font.metadata_file)
         return True, ["Subsets reordered"]
     return False, []
+
+
+@fix("com.google.fonts/check/unwanted_tables")
+def fix_unwanted_tables(font: Font, _context) -> FixResult:
+    return remove_tables(font.ttFont)
